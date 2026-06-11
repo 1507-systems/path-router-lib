@@ -1,0 +1,40 @@
+name: Validate
+
+# Validation-only CI (fleet standard, Node 22): typecheck + hermetic vitest
+# suite on every PR and push to main. This library has no deploy job —
+# releases are annotated git tags (v0.1.0, ...) consumed by downstream repos
+# as pinned `github:` dependencies, so there is nothing to drift.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Typecheck + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
