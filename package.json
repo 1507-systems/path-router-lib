@@ -1,6 +1,6 @@
 {
   "name": "@1507-systems/path-router-lib",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generic path-mount router primitives for Web-standard fetch handlers: mount matching, prefix-strip/exact-map rewrites, host redirects, constrained discovery payloads. Zero runtime deps, no Cloudflare types.",
   "license": "MIT",
   "type": "module",
