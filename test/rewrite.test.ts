@@ -25,6 +25,26 @@ describe('applyRewrite — strip-prefix', () => {
     expect(applyRewrite(rule, '/mcp', '?a=1&b=2')).toBe('/mcp?a=1&b=2');
     expect(applyRewrite(rule, '', '?a=1')).toBe('/?a=1');
   });
+
+  // Regression: a leading slash run is collapsed to exactly one so the
+  // result can never read as a protocol-relative URL (`//evil.com/x` would
+  // make `evil.com` the authority in a naive `new URL(path, base)`).
+  it('collapses a leading slash run — never emits a protocol-relative path', () => {
+    expect(applyRewrite(rule, '//evil.com/x')).toBe('/evil.com/x');
+    expect(applyRewrite(rule, '//attacker.tld/x')).toBe('/attacker.tld/x');
+    expect(applyRewrite(rule, '//mcp')).toBe('/mcp');
+    expect(applyRewrite(rule, '///deep')).toBe('/deep');
+    expect(applyRewrite(rule, '//')).toBe('/');
+  });
+
+  it('collapsing keeps interior slashes and the query string intact', () => {
+    expect(applyRewrite(rule, '//evil.com//x', '?a=1')).toBe('/evil.com//x?a=1');
+  });
+
+  it('does not decode %2F — encoded slashes stay literal path bytes', () => {
+    expect(applyRewrite(rule, '/%2F..')).toBe('/%2F..');
+    expect(applyRewrite(rule, '/%2F%2Fevil.com/x')).toBe('/%2F%2Fevil.com/x');
+  });
 });
 
 describe('applyRewrite — exact-map', () => {

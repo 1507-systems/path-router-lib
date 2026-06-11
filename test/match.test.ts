@@ -33,6 +33,19 @@ describe('resolveMount', () => {
     expect(resolveMount(u('/domain/mcp/x/y'), mounts)?.backendPath).toBe('/mcp/x/y');
   });
 
+  it('never emits a protocol-relative backendPath for // suffixes', () => {
+    expect(resolveMount(u('/domain//evil.com/x'), mounts)?.backendPath).toBe(
+      '/evil.com/x',
+    );
+    expect(resolveMount(u('/memory//attacker.tld/x'), mounts)?.backendPath).toBe(
+      '/attacker.tld/x',
+    );
+    expect(resolveMount(u('/domain//mcp'), mounts)?.backendPath).toBe('/mcp');
+    expect(resolveMount(u('/domain//evil.com/x?q=1'), mounts)?.backendPath).toBe(
+      '/evil.com/x?q=1',
+    );
+  });
+
   it('is boundary-safe: /domainx does not match /domain', () => {
     expect(resolveMount(u('/domainx'), mounts)).toBeNull();
     expect(resolveMount(u('/domainx/mcp'), mounts)).toBeNull();

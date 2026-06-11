@@ -60,3 +60,56 @@ describe('buildBackendRequest', () => {
     expect(out.signal.aborted).toBe(true);
   });
 });
+
+// Regression — protocol-relative backendPath must NEVER become an authority.
+// `new URL('//evil.com/x', base)` resolves to `https://evil.com/x`; the
+// origin-pinned construction must keep every rebased URL on the ROUTER
+// origin instead (SSRF for fetch() consumers, wrong-endpoint routing via
+// service bindings).
+describe('buildBackendRequest — origin pinning', () => {
+  const ROUTER = 'https://mcp.example.com';
+
+  it('/domain//evil.com/x → the rebased URL stays on the router origin', () => {
+    const req = new Request(`${ROUTER}/domain//evil.com/x`);
+    const out = buildBackendRequest(req, '//evil.com/x');
+    const url = new URL(out.url);
+    expect(url.origin).toBe(ROUTER);
+    expect(url.hostname).toBe('mcp.example.com');
+    expect(url.pathname).toBe('//evil.com/x');
+  });
+
+  it('/memory//attacker.tld/x → stays on the router origin', () => {
+    const req = new Request(`${ROUTER}/memory//attacker.tld/x`);
+    const out = buildBackendRequest(req, '//attacker.tld/x');
+    const url = new URL(out.url);
+    expect(url.origin).toBe(ROUTER);
+    expect(url.pathname).toBe('//attacker.tld/x');
+  });
+
+  it('/domain//mcp → stays on the router origin (no `mcp` authority)', () => {
+    const req = new Request(`${ROUTER}/domain//mcp`);
+    const out = buildBackendRequest(req, '//mcp');
+    const url = new URL(out.url);
+    expect(url.origin).toBe(ROUTER);
+    expect(url.pathname).toBe('//mcp');
+  });
+
+  it('%2F-encoded variants stay literal path bytes on the router origin', () => {
+    for (const path of ['/%2F..', '/%2F%2Fevil.com/x', '/%2Fevil.com%2Fx']) {
+      const req = new Request(`${ROUTER}/domain${path}`);
+      const out = buildBackendRequest(req, path);
+      const url = new URL(out.url);
+      expect(url.origin).toBe(ROUTER);
+      expect(url.pathname).toBe(path);
+    }
+  });
+
+  it('query preservation still holds under origin pinning', () => {
+    const req = new Request(`${ROUTER}/domain//evil.com/x?a=1&b=two%20three`);
+    const out = buildBackendRequest(req, '//evil.com/x?a=1&b=two%20three');
+    const url = new URL(out.url);
+    expect(url.origin).toBe(ROUTER);
+    expect(url.pathname).toBe('//evil.com/x');
+    expect(url.search).toBe('?a=1&b=two%20three');
+  });
+});
