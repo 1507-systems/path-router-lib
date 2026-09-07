@@ -2,9 +2,9 @@
 
 Generic path-mount router primitives for Web-standard `fetch` handlers.
 
-One routing/rewrite implementation, shared by every 1507 path-based router
-(first consumer: `mcp-router` on `mcp.1507.cloud`; next: the `api.1507.systems`
-router) so the routers cannot drift apart.
+One routing/rewrite implementation, shared by every path-based router that
+consumes it, so the routers cannot drift apart. Hostnames and mount tables are
+supplied by the consumer; the library holds no deployment values of its own.
 
 - **Web-standard only** — `URL`, `Request`, `Response`. No Cloudflare types,
   no framework, zero runtime dependencies. Works in Workers, Node ≥ 18, Deno,
@@ -87,8 +87,8 @@ Builds the constrained public payload for `GET /`:
 
 ```json
 {
-  "service": "mcp-router",
-  "host": "mcp.1507.cloud",
+  "service": "example-router",
+  "host": "router.example.com",
   "version": "<GIT_SHA>",
   "mounts": [
     { "name": "domain", "path": "/domain", "mcp_endpoint": "/domain/mcp",
@@ -121,7 +121,7 @@ export default {
 
     if (url.pathname === '/' && req.method === 'GET') {
       return Response.json(discoveryPayload({
-        service: 'mcp-router', host: 'mcp.1507.cloud',
+        service: env.SERVICE_NAME, host: env.ROUTER_HOST,
         version: env.GIT_SHA, mounts: MOUNTS,
       }));
     }

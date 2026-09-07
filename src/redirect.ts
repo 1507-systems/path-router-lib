@@ -1,8 +1,8 @@
 /** Permanent host-level redirect (e.g. a legacy hostname during migration). */
 export interface HostRedirectRule {
-  /** Hostname to redirect away from, e.g. `"cfdomaincheck.mcp.1507.cloud"`. */
+  /** Hostname to redirect away from, e.g. `"legacy.example.com"`. */
   fromHost: string;
-  /** Target origin, no trailing slash, e.g. `"https://mcp.1507.cloud"`. */
+  /** Target origin, no trailing slash, e.g. `"https://router.example.com"`. */
   toOrigin: string;
   /** Path prefix prepended to the original path, e.g. `"/domain"`. */
   pathPrefix: string;
@@ -13,7 +13,7 @@ export interface HostRedirectRule {
  * rule, else `null`. The original path and query are preserved under the
  * rule's `pathPrefix`:
  *
- *   GET cfdomaincheck.../mcp?x=1 → Location: https://mcp.1507.cloud/domain/mcp?x=1
+ *   GET legacy.example.com/mcp?x=1 → Location: https://router.example.com/domain/mcp?x=1
  *
  * Status is 301 for GET/HEAD and 308 (method-preserving permanent) for
  * everything else, so a redirected POST body — e.g. MCP JSON-RPC — can never
